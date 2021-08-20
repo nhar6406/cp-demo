@@ -720,14 +720,15 @@ services:
       - ./scripts/security:/etc/kafka/secrets
       - ./scripts/security/keypair:/tmp/conf
     ports:
-      - 8085:8085
+      - "8081:8081"
+      - "8085:8085"
     environment:
       CUB_CLASSPATH: '/usr/share/java/confluent-security/schema-registry/*:/usr/share/java/schema-registry/*:/usr/share/java/cp-base-new/*'
 
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
 
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka1:10091,kafka2:10092
-      SCHEMA_REGISTRY_LISTENERS: https://0.0.0.0:8085
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081,https://0.0.0.0:8085"
       SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SASL_SSL
 
       SCHEMA_REGISTRY_KAFKASTORE_SASL_MECHANISM: OAUTHBEARER

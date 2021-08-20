@@ -4,6 +4,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 source ${DIR}/helper/functions.sh
 source ${DIR}/env.sh
 
+CLEAN=true
+
 #-------------------------------------------------------------------------------
 
 # Do preflight checks
@@ -117,78 +119,6 @@ if [[ $(docker-compose ps) =~ "Exit 137" ]]; then
   echo -e "\nERROR: At least one Docker container did not start properly, see 'docker-compose ps'. Did you increase the memory available to Docker to at least 8 GB (default is 2 GB)?\n"
   exit 1
 fi
-
-#-------------------------------------------------------------------------------
-
-echo -e "\nStart streaming from the Wikipedia SSE source connector:"
-${DIR}/connectors/submit_wikipedia_sse_config.sh || exit 1
-
-# Verify connector is running
-MAX_WAIT=120
-echo
-echo "Waiting up to $MAX_WAIT seconds for connector to be in RUNNING state"
-retry $MAX_WAIT check_connector_status_running "wikipedia-sse" || exit 1
-
-# Verify wikipedia.parsed topic is populated and schema is registered
-MAX_WAIT=120
-echo
-echo -e "Waiting up to $MAX_WAIT seconds for subject wikipedia.parsed-value (for topic wikipedia.parsed) to be registered in Schema Registry"
-retry $MAX_WAIT host_check_schema_registered || exit 1
-
-#-------------------------------------------------------------------------------
-
-# Register the same schema for the replicated topic wikipedia.parsed.replica as was created for the original topic wikipedia.parsed
-# In this case the replicated topic will register with the same schema ID as the original topic
-echo -e "\nRegister subject wikipedia.parsed.replica-value in Schema Registry"
-SCHEMA=$(docker-compose exec schemaregistry curl -s -X GET --cert /etc/kafka/secrets/schemaregistry.certificate.pem --key /etc/kafka/secrets/schemaregistry.key --tlsv1.2 --cacert /etc/kafka/secrets/snakeoil-ca-1.crt -u superUser:superUser https://schemaregistry:8085/subjects/wikipedia.parsed-value/versions/latest | jq .schema)
-docker-compose exec schemaregistry curl -X POST --cert /etc/kafka/secrets/schemaregistry.certificate.pem --key /etc/kafka/secrets/schemaregistry.key --tlsv1.2 --cacert /etc/kafka/secrets/snakeoil-ca-1.crt -H "Content-Type: application/vnd.schemaregistry.v1+json" --data "{\"schema\": $SCHEMA}" -u superUser:superUser https://schemaregistry:8085/subjects/wikipedia.parsed.replica-value/versions
-
-echo
-echo -e "\nStart Confluent Replicator to loopback to on-prem cluster:"
-${DIR}/connectors/submit_replicator_config.sh || exit 1
-
-#-------------------------------------------------------------------------------
-
-# Verify ksqlDB server has started
-echo
-echo
-MAX_WAIT=120
-echo -e "\nWaiting up to $MAX_WAIT seconds for ksqlDB server to start"
-retry $MAX_WAIT host_check_ksqlDBserver_up || exit 1
-echo -e "\nRun ksqlDB queries:"
-${DIR}/ksqlDB/run_ksqlDB.sh
-
-echo -e "\nStart additional consumers to read from topics WIKIPEDIANOBOT, WIKIPEDIA_COUNT_GT_1"
-${DIR}/consumers/listen_WIKIPEDIANOBOT.sh
-${DIR}/consumers/listen_WIKIPEDIA_COUNT_GT_1.sh
-
-echo
-echo
-echo "Start the Kafka Streams application wikipedia-activity-monitor"
-docker-compose up -d streams-demo
-echo "..."
-
-#-------------------------------------------------------------------------------
-
-if [[ "$VIZ" == "true" ]]; then
-  build_viz || exit 1
-fi
-
-echo
-echo -e "\nAvailable LDAP users:"
-#docker-compose exec openldap ldapsearch -x -h localhost -b dc=confluentdemo,dc=io -D "cn=admin,dc=confluentdemo,dc=io" -w admin | grep uid:
-curl -u mds:mds -X POST "https://localhost:8091/security/1.0/principals/User%3Amds/roles/UserAdmin" \
-  -H "accept: application/json" -H "Content-Type: application/json" \
-  -d "{\"clusters\":{\"kafka-cluster\":\"does_not_matter\"}}" \
-  --cacert scripts/security/snakeoil-ca-1.crt --tlsv1.2
-curl -u mds:mds -X POST "https://localhost:8091/security/1.0/rbac/principals" --silent \
-  -H "accept: application/json"  -H "Content-Type: application/json" \
-  -d "{\"clusters\":{\"kafka-cluster\":\"does_not_matter\"}}" \
-  --cacert scripts/security/snakeoil-ca-1.crt --tlsv1.2 | jq '.[]'
-
-# Do poststart_checks
-poststart_checks
-
 
 cat << EOF
 
