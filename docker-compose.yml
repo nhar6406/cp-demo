@@ -183,11 +183,11 @@ services:
       KAFKA_LISTENER_NAME_TOKEN_SSL_PRINCIPAL_MAPPING_RULES: RULE:^CN=([a-zA-Z0-9.]*).*$$/$$1/ , DEFAULT
 
       # Schema Validation
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: https://schemaregistry:8085
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schemaregistry:8085
       KAFKA_CONFLUENT_BASIC_AUTH_CREDENTIALS_SOURCE: USER_INFO
       KAFKA_CONFLUENT_BASIC_AUTH_USER_INFO: 'superUser:superUser'
-      KAFKA_CONFLUENT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka1.truststore.jks
-      KAFKA_CONFLUENT_SSL_TRUSTSTORE_PASSWORD: confluent
+      # KAFKA_CONFLUENT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka1.truststore.jks
+      # KAFKA_CONFLUENT_SSL_TRUSTSTORE_PASSWORD: confluent
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/broker_jaas.conf
 
       # MDS
@@ -356,11 +356,11 @@ services:
       KAFKA_LISTENER_NAME_TOKEN_SSL_PRINCIPAL_MAPPING_RULES: RULE:^CN=([a-zA-Z0-9.]*).*$$/$$1/ , DEFAULT
 
       # Schema Validation
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: https://schemaregistry:8085
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schemaregistry:8085
       KAFKA_CONFLUENT_BASIC_AUTH_CREDENTIALS_SOURCE: USER_INFO
       KAFKA_CONFLUENT_BASIC_AUTH_USER_INFO: 'superUser:superUser'
-      KAFKA_CONFLUENT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka2.truststore.jks
-      KAFKA_CONFLUENT_SSL_TRUSTSTORE_PASSWORD: confluent
+      # KAFKA_CONFLUENT_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.kafka2.truststore.jks
+      # KAFKA_CONFLUENT_SSL_TRUSTSTORE_PASSWORD: confluent
       KAFKA_OPTS: -Djava.security.auth.login.config=/etc/kafka/secrets/broker_jaas.conf
 
       # MDS
@@ -692,11 +692,11 @@ services:
       CONTROL_CENTER_KSQL_WIKIPEDIA_ADVERTISED_URL: ${CONTROL_CENTER_KSQL_WIKIPEDIA_ADVERTISED_URL}
 
       # Schema Registry
-      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_URL: https://schemaregistry:8085
-      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
-      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: confluent
-      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.controlCenterAndKsqlDBServer.truststore.jks
-      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SSL_TRUSTSTORE_PASSWORD: confluent
+      CONTROL_CENTER_SCHEMA_REGISTRY_SR1_URL: http://schemaregistry:8085
+      # CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      # CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: confluent
+      # CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.controlCenterAndKsqlDBServer.truststore.jks
+      # CONTROL_CENTER_SCHEMA_REGISTRY_SR1_SSL_TRUSTSTORE_PASSWORD: confluent
 
       # RBAC
       CONTROL_CENTER_REST_AUTHENTICATION_METHOD: BEARER
@@ -720,13 +720,12 @@ services:
       - ./scripts/security:/etc/kafka/secrets
       - ./scripts/security/keypair:/tmp/conf
     ports:
-      - "8081:8081"
       - "8085:8085"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
 
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka1:12091,kafka2:12092
-      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081,https://0.0.0.0:8085"
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8085"
 
   ksqldb-server:
     image: ${REPOSITORY}/cp-ksqldb-server:${CONFLUENT_DOCKER_TAG}
@@ -794,9 +793,9 @@ services:
       KSQL_SSL_CIPHER_SUITES: "TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 
       # Schema Registry using HTTPS
-      KSQL_KSQL_SCHEMA_REGISTRY_URL: https://schemaregistry:8085
-      KSQL_KSQL_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: "/etc/kafka/secrets/kafka.controlCenterAndKsqlDBServer.truststore.jks"
-      KSQL_KSQL_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: "confluent"
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schemaregistry:8085
+      # KSQL_KSQL_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: "/etc/kafka/secrets/kafka.controlCenterAndKsqlDBServer.truststore.jks"
+      # KSQL_KSQL_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: "confluent"
 
       # Enable OAuth for ksqlDB's embedded Kafka clients that access and manage consumer groups and topics
       KSQL_SECURITY_PROTOCOL: SASL_SSL
@@ -861,9 +860,9 @@ services:
       KAFKA_REST_BOOTSTRAP_SERVERS: SASL_SSL://kafka1:10091,SASL_SSL://kafka2:10092
       KAFKA_REST_LISTENERS: https://0.0.0.0:8086
 
-      KAFKA_REST_SCHEMA_REGISTRY_URL: https://schemaregistry:8085
-      KAFKA_REST_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
-      KAFKA_REST_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: confluent
+      KAFKA_REST_SCHEMA_REGISTRY_URL: http://schemaregistry:8085
+      # KAFKA_REST_SCHEMA_REGISTRY_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.client.truststore.jks
+      # KAFKA_REST_SCHEMA_REGISTRY_SSL_TRUSTSTORE_PASSWORD: confluent
 
       KAFKA_REST_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.restproxy.truststore.jks
       KAFKA_REST_SSL_TRUSTSTORE_PASSWORD: confluent
